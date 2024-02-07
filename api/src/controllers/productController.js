@@ -10,12 +10,11 @@ const getAllProducts = async (req, res) => {
   let result;
 
   try {
-    // If searchTerm is empty, then select all products from products table
+    // If searchTerm is empty,  select all products from products table
     if (!searchTerm) {
       result = await client.query("SELECT * FROM products");
     }
-
-    // searchTerm is not empty, then select all products with searchTerm filtering
+    // searchTerm is not empty,  select all products with searchTerm filtering
     else {
       result = await client.query(
         "SELECT * FROM products WHERE LOWER(productName) LIKE LOWER($1) OR productWeight::TEXT LIKE $2 OR productColor::TEXT LIKE $3 OR productQuantity::TEXT LIKE $4",
@@ -28,13 +27,13 @@ const getAllProducts = async (req, res) => {
       );
     }
 
-    // If result is empty or result.rows.length is equal to 0, then send 404 Not Found
+    // If result is empty or result.rows.length is equal to 0,  send 404 Not Found
     if (result.rows.length === 0) {
       res.sendStatus(404);
       return;
     }
 
-    // result is not empty, then send 200 with result
+    // result is not empty,  send 200 with result
     res.status(200).send(result.rows);
 
     // Error handler
@@ -61,13 +60,13 @@ const getOneProduct = async (req, res) => {
       [id]
     );
 
-    // If result is empty or result.rows.length is equal to 0, then send 404 Not Found
+    // If result is empty or result.rows.length is equal to 0,  send 404 Not Found
     if (result.rows.length === 0) {
       res.sendStatus(404);
       return;
     }
 
-    // result is not empty, then send 200 with result
+    // result is not empty,  send 200 with result
     res.status(200).send(result.rows[0]);
 
     // Error handler
@@ -100,13 +99,13 @@ const newProduct = async (req, res) => {
       [productName, productSize, productWeight, productColor, productQuantity]
     );
 
-    // If result is empty or result.rows.length is equal to 0, then send 500 Failed to Insert New Product
+    // If result is empty or result.rows.length is equal to 0,  send 500 Failed to Insert New Product
     if (result.rows.length === 0) {
       res.status(500).send("Failed to Insert New Data");
       return;
     }
 
-    // result is not empty, then send 200 with result
+    // result is not empty,  send 200 with result
     res.status(200).send(result.rows[0]);
 
     // Error handler
@@ -141,13 +140,13 @@ const updateProduct = async (req, res) => {
       [id]
     );
 
-    // If oldProduct is empty or oldProduct.rows.length is equal to 0, then send 404 Not Found
+    // If oldProduct is empty or oldProduct.rows.length is equal to 0,  send 404 Not Found
     if (oldProduct.rows.length === 0) {
       res.sendStatus(404);
       return;
     }
 
-    // oldProduct is not empty, then update product's data
+    // oldProduct is not empty,  update product's data
     const updated = await client.query(
       "UPDATE products SET productName=$1, productSize=$2, productWeight=$3, productColor=$4, productQuantity=$5 WHERE productId=$6 returning *",
       [
@@ -160,13 +159,13 @@ const updateProduct = async (req, res) => {
       ]
     );
 
-    // If updated is empty or updated.rows.length is equal to 0, then send 500 Failed to Update Product's Data
+    // If updated is empty or updated.rows.length is equal to 0,  send 500 Failed to Update Product's Data
     if (updated.rows.length === 0) {
       res.status(500).send("Failed to Update Product's Data");
       return;
     }
 
-    // updated is not empty, then send 200 with updated
+    // updated is not empty,  send 200 with updated
     res.status(200).send(updated.rows);
 
     // Error handler
@@ -193,25 +192,25 @@ const deleteProduct = async (req, res) => {
       [id]
     );
 
-    // If product is empty or product.rows.length is equal to 0, then send 404 Product Not Found
+    // If product is empty or product.rows.length is equal to 0,  send 404 Product Not Found
     if (product.rows.length === 0) {
       res.sendStatus(404);
       return;
     }
 
-    // product is not empty, then delete product from table
+    // product is not empty,  delete product from table
     const deleted = await client.query(
       "DELETE FROM products WHERE productId=$1 returning *",
       [id]
     );
 
-    // If deleted.rowCount is equal to 0 or more than 1, then send 500
+    // If deleted.rowCount is equal to 0 or more than 1,  send 500
     if (deleted.rowCount === 0 || deleted.rowCount > 1) {
       res.sendStatus(500);
       return;
     }
 
-    // deleted.rowCount is 1, then send 200
+    // deleted.rowCount is 1,  send 200
     res.status(200).send("Product Deleted Successfully");
 
     // Error handler
