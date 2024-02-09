@@ -10,38 +10,39 @@ const getAllLogs = async (req, res) => {
   let result;
 
   try {
-    // If searchTerm is empty, select all logs from productLogs tables join products table
-    if (!searchTerm) {
-      result = await client.query(
-        "SELECT productsLog.*, products.productName, products.productSize, products.productWeight, products.productColor FROM productsLog INNER JOIN products ON productsLog.productId = products.productId"
-      );
+    // Store the query and the params
+    let query =
+      "SELECT productsLog.*, products.productName, products.productSize, products.productWeight, products.productColor FROM productsLog INNER JOIN products ON productsLog.productId = products.productId";
+    let params = [];
+
+    // If searchTerm is not empty, update the query and the params
+    if (searchTerm) {
+      query +=
+        "WHERE productsLog.dateTime::TEXT LIKE $1 OR LOWER(productsLog.logType::TEXT) LIKE $2 OR LOWER(products.productName::TEXT) LIKE LOWER($3) OR LOWER(products.productSize::TEXT) LIKE LOWER($4) OR LOWER(products.productWeight::TEXT) LIKE LOWER($5) OR LOWER(products.productColor::TEXT) LIKE LOWER($6)";
+      params = [
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+        `%${searchTerm}%`,
+      ];
     }
-    // searchTerm is not empty, select all logs with searchTerm filtering
-    else {
-      result = await client.query(
-        "SELECT productsLog.*, products.productName, products.productSize, products.productWeight, products.productColor FROM productsLog INNER JOIN products ON productsLog.productId = products.productId WHERE productsLog.dateTime::TEXT LIKE $1 OR LOWER(productsLog.logType::TEXT) LIKE $2 OR LOWER(products.productName::TEXT) LIKE LOWER($3) OR LOWER(products.productSize::TEXT) LIKE LOWER($4) OR LOWER(products.productWeight::TEXT) LIKE LOWER($5) OR LOWER(products.productColor::TEXT) LIKE LOWER($6)",
-        [
-          `%${searchTerm}%`,
-          `%${searchTerm}%`,
-          `%${searchTerm}%`,
-          `%${searchTerm}%`,
-          `%${searchTerm}%`,
-          `%${searchTerm}%`,
-        ]
-      );
-    }
+
+    // Select all logs from productsLog table
+    result = await client.query(query, params);
 
     // If result is empty, send 404 Not Found
     if (result.rowCount === 0) {
-      res.sendStatus(404);
+      res.status(404).send("Logs is Empty");
       return;
     }
 
     // result is not empty, send result
-    res.send(result.rows);
+    res.status(200).send(result.rows);
   } catch (error) {
     // Error handler
-    res.send(error.message);
+    res.status(500).send("Internal Server Error \n" + error.message);
   } finally {
     // Release the connection
     client.release();
@@ -62,17 +63,17 @@ const getOneLog = async (req, res) => {
       [id]
     );
 
-    // If result is empty, send 404
+    // If result is empty, send 404 Not Found
     if (result.rowCount === 0) {
-      res.sendStatus(404);
+      res.status(404).send("Log Not Found");
       return;
     }
 
     // result is not empty, send result
-    res.send(result.rows);
+    res.status(200).send(result.rows);
   } catch (error) {
     // Error handler
-    res.send(error.message);
+    res.status(500).send("Internal Server Error \n" + error.message);
   } finally {
     // Release the connection
     client.release();
@@ -93,17 +94,17 @@ const newLog = async (req, res) => {
       [productId, logType, quantity, dateTime]
     );
 
-    // If result is empty, send 500
+    // If result is empty, send 409
     if (result.rowCount === 0) {
-      res.sendStatus(500);
+      res.status(409).send("Failed to Insert New Log");
       return;
     }
 
-    // result is not empty, send 200
-    res.send(result.rows);
+    // result is not empty, send result
+    res.status(200).send(result.rows);
   } catch (error) {
     // Error handler
-    res.send(error.message);
+    res.status(500).send("Internal Server Error \n" + error.message);
   } finally {
     // Release the connection
     client.release();
@@ -120,35 +121,23 @@ const updateLog = async (req, res) => {
   const { productId, logType, quantity, dateTime } = req.body;
 
   try {
-    // Select log with specified id
-    const oldLog = await client.query(
-      "SELECT * FROM productsLog WHERE logId=$1",
-      [id]
-    );
-
-    // If oldLog is empty, send 404
-    if (oldLog.rowCount === 0) {
-      res.sendStatus(404);
-      return;
-    }
-
-    // oldLog is not empty, update log's data
+    // Update log's data
     const updated = await client.query(
       "UPDATE productsLog SET productId=$1, logType=$2, quantity=$3, dateTime=$4 WHERE logId=$5 returning *",
       [productId, logType, quantity, dateTime, id]
     );
 
-    // If updated is empty, send 500
+    // If updated is empty, send 409
     if (updated.rowCount === 0) {
-      res.sendStatus(500);
+      res.status(409).send("Failed to Update Log's Data");
       return;
     }
 
     // updated is not empty, send updated
-    res.send(updated.rows);
+    res.status(200).send(updated.rows);
   } catch (error) {
     // Error handler
-    res.send(error.message);
+    res.status(500).send("Internal Server Error \n" + error.message);
   } finally {
     // Release the connection
     client.release();
@@ -163,26 +152,15 @@ const deleteLog = async (req, res) => {
   const id = req.params.id;
 
   try {
-    // Select log with specified id
-    const log = await client.query("SELECT * FROM productsLog WHERE logId=$1", [
-      id,
-    ]);
-
-    // If log is empty, send 404
-    if (log.rowCount === 0) {
-      res.sendStatus(404);
-      return;
-    }
-
-    // log is not empty, delete log's data
+    // Delete log's data
     const deleted = await client.query(
-      "DELETE FROM productsLog WHERE logId=$1",
+      "DELETE FROM productsLog WHERE logId=$1 returning *",
       [id]
     );
 
-    // If deleted is empty, return 500
+    // If deleted is empty, send 404
     if (deleted.rowCount === 0) {
-      res.sendStatus(500);
+      res.status(404).send("Failed to Delete Log's, Log's Not Found");
       return;
     }
 
@@ -190,13 +168,14 @@ const deleteLog = async (req, res) => {
     res.sendStatus(200);
   } catch (error) {
     // Error handler
-    res.send(error.message);
+    res.status(500).send("Internal Server Error \n" + error.message);
   } finally {
     // Release the connection
     client.release();
   }
 };
 
+// Export all controllers
 module.exports = {
   getAllLogs,
   getOneLog,

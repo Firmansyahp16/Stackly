@@ -1,12 +1,13 @@
 // Using dotenv module for accessing .env variable
 require("dotenv").config();
-
-// Importing express module
-const express = require("express");
 // Importing cors module for enabling fetching data using localhost address
 const cors = require("cors");
+// Importing express module
+const express = require("express");
 // Importing pool variable for connecting to database from dbConfig
 const pool = require("./configs/dbConfig");
+//
+const session = require("express-session");
 
 // Creating new express app
 const app = express();
@@ -20,6 +21,14 @@ const mainRouter = require("./routes/mainRoute");
 app.use(cors());
 // Make the app to able to parse json
 app.use(express.json());
+//
+app.use(
+  session({
+    secret: "SECRET_KEY",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
 // Make the app to able to obtain data from form-encode
 app.use(express.urlencoded({ extended: true }));
 
