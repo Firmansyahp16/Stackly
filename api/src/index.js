@@ -6,7 +6,7 @@ const cors = require("cors");
 const express = require("express");
 // Importing pool variable for connecting to database from dbConfig
 const pool = require("./configs/dbConfig");
-//
+// Importing session module to store session data
 const session = require("express-session");
 
 // Creating new express app
@@ -21,7 +21,7 @@ const mainRouter = require("./routes/mainRoute");
 app.use(cors());
 // Make the app to able to parse json
 app.use(express.json());
-//
+// Make the app to use session
 app.use(
   session({
     secret: "SECRET_KEY",
