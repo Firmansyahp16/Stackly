@@ -22,7 +22,7 @@ const getAllProducts = async (req, res) => {
         `%${searchTerm}%`,
         `%${searchTerm}%`,
         `%${searchTerm}%`,
-        `%${searchTerm}`,
+        `%${searchTerm}%`,
       ];
     }
 
