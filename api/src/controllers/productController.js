@@ -6,6 +6,10 @@ const getAllProducts = async (req, res) => {
   const client = await pool.connect();
   // Create searchTerm variable to store query parameter
   const searchTerm = req.query.q;
+  // Create category variable to store category parameter
+  const category = req.query.category;
+  // Create value variable to store value parameter and convert it to lowercase
+  const value = req.query.value ? req.query.value.toLowerCase() : null;
   // Create result variable to store query result
   let result;
 
@@ -24,6 +28,23 @@ const getAllProducts = async (req, res) => {
         `%${searchTerm}%`,
         `%${searchTerm}%`,
       ];
+    }
+
+    // If category and value are not empty, update the query and the params variable
+    if (category && value) {
+      if (params.length === 0) {
+        query += " WHERE";
+      } else {
+        query += " AND";
+      }
+
+      // Construct the query to filter based on the specified category, allowing for case-insensitive comparison
+      query += ` LOWER(product${
+        category.charAt(0).toUpperCase() + category.slice(1)
+      }) LIKE LOWER($${params.length + 1})`;
+
+      // Push the parameter value to the params array, converting it to lowercase and adding wildcards for partial matching
+      params.push(`%${value}%`);
     }
 
     // Select all products from products table
