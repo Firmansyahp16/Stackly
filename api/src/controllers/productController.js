@@ -10,18 +10,24 @@ const getAllProducts = async (req, res) => {
   const category = req.query.category;
   // Create value variable to store value parameter and convert it to lowercase
   const value = req.query.value ? req.query.value.toLowerCase() : null;
+  // Create sort variable to store sort parameter
+  const sort = req.query.sort;
   // Create result variable to store query result
   let result;
 
   try {
     // Store the query and the params
-    let query = "SELECT * FROM products";
+    let query = `
+      SELECT products.*, productsLog.dateTime 
+      FROM products 
+      LEFT JOIN productsLog ON products.productId = productsLog.productId
+    `;
     let params = [];
 
     // If searchTerm is not empty, update the query and the params variable
     if (searchTerm) {
       query +=
-        " WHERE LOWER(productName) LIKE LOWER($1) OR productWeight::TEXT LIKE $2 OR productColor::TEXT LIKE $3 OR productQuantity::TEXT LIKE $4";
+        " WHERE LOWER(products.productName) LIKE LOWER($1) OR products.productWeight::TEXT LIKE $2 OR products.productColor::TEXT LIKE $3 OR products.productQuantity::TEXT LIKE $4";
       params = [
         `%${searchTerm}%`,
         `%${searchTerm}%`,
@@ -45,6 +51,18 @@ const getAllProducts = async (req, res) => {
 
       // Push the parameter value to the params array, converting it to lowercase and adding wildcards for partial matching
       params.push(`%${value}%`);
+    }
+
+    // If sort parameter is provided and valid, and asc parameter is either "true" or "false", add sorting to the query
+    if (
+      sort &&
+      ["stock", "time"].includes(sort) &&
+      ["true", "false"].includes(req.query.asc)
+    ) {
+      // Construct the ORDER BY clause based on the sort and asc parameters
+      query += ` ORDER BY ${
+        sort === "stock" ? "products.productQuantity" : "productsLog.dateTime"
+      } ${req.query.asc === "true" ? "asc" : "desc"}`;
     }
 
     // Select all products from products table
