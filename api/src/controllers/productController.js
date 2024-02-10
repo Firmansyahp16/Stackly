@@ -4,14 +4,8 @@ const pool = require("../configs/dbConfig");
 const getAllProducts = async (req, res) => {
   // Create connection to DB
   const client = await pool.connect();
-  // Create searchTerm variable to store query parameter
-  const searchTerm = req.query.q;
-  // Create category variable to store category parameter
-  const category = req.query.category;
-  // Create value variable to store value parameter and convert it to lowercase
-  const value = req.query.value ? req.query.value.toLowerCase() : null;
-  // Create sort variable to store sort parameter
-  const sort = req.query.sort;
+  // Store parameters from req query
+  const {q: searchTerm, category, value, sort} = req.query
   // Create result variable to store query result
   let result;
 
