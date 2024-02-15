@@ -96,9 +96,47 @@ const authLogout = async (req, res) => {
   }
 };
 
+const authRegister = async (req, res) => {
+  // Create connection to DB
+  const client = await pool.connect();
+  const { username, password, fullname, email } = req.body;
+  try {
+    const checkUsername = await client.query(
+      "SELECT * FROM users WHERE username = $1",
+      [username]
+    );
+    if (checkUsername.rowCount >= 1) {
+      res.status(409).send("Username is already used");
+      return;
+    }
+    const checkEmail = await client.query(
+      "SELECT * FROM users WHERE email = $1",
+      [email]
+    );
+    if (checkEmail.rowCount >= 1) {
+      res.status(409).send("Email is already used");
+      return;
+    }
+    const insertUser = await client.query(
+      "INSERT INTO users (username, password, fullname, email) VALUES ($1, $2, $3, $4) returning *",
+      [username, password, fullname, email]
+    );
+    if (insertUser.rowCount === 0) {
+      res.status(409).send("Failed to Register");
+      return;
+    }
+    res.status(200).send("Register Successfully");
+  } catch (error) {
+    res.status(500).send("Internal Server Error \n" + error.message);
+  } finally {
+    client.release();
+  }
+};
+
 // Export all functions
 module.exports = {
   isLoggedIn,
   authLogin,
   authLogout,
+  authRegister,
 };
