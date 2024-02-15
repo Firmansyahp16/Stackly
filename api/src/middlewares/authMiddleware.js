@@ -97,7 +97,6 @@ const authLogout = async (req, res) => {
 };
 
 const authRegister = async (req, res) => {
-  // Create connection to DB
   const client = await pool.connect();
   const { username, password, fullname, email } = req.body;
   try {
@@ -133,10 +132,43 @@ const authRegister = async (req, res) => {
   }
 };
 
+const authForgotPassword = async (req, res) => {
+  const client = await pool.connect();
+  const { username, email, password } = req.body;
+  try {
+    if (!username && !email) {
+      res.status(409).send("Username or Email is required");
+      return;
+    }
+    const checkUsernameEmail = await client.query(
+      "SELECT * FROM users WHERE username = $1 AND email = $2",
+      [username, email]
+    );
+    if (checkUsernameEmail.rowCount === 0) {
+      res.status(409).send("Username or Email is not found");
+      return;
+    }
+    const updatePassword = await client.query(
+      "UPDATE users SET password = $1 WHERE username = $2 AND email = $3 RETURNING *",
+      [password, username, email]
+    );
+    if (updatePassword.rowCount === 0) {
+      res.status(409).send("Failed to Update Password");
+      return;
+    }
+    res.status(200).send("Update Password Successfully");
+  } catch (error) {
+    res.status(500).send("Internal Server Error \n" + error.message);
+  } finally {
+    client.release();
+  }
+};
+
 // Export all functions
 module.exports = {
   isLoggedIn,
   authLogin,
   authLogout,
   authRegister,
+  authForgotPassword,
 };
